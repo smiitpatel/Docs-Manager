@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="grad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="44" fill="url(#grad192)"/>
+  <!-- Document -->
+  <rect x="52" y="40" width="88" height="112" rx="10" fill="#ffffff"/>
+  <path d="M112 40 L140 68 L112 68 Z" fill="#E0E7FF"/>
+  <!-- Document lines -->
+  <rect x="66" y="72" width="40" height="6" rx="3" fill="#4F46E5"/>
+  <rect x="66" y="86" width="60" height="5" rx="2.5" fill="#94A3B8"/>
+  <rect x="66" y="98" width="50" height="5" rx="2.5" fill="#94A3B8"/>
+  <rect x="66" y="110" width="35" height="5" rx="2.5" fill="#CBD5E1"/>
+  <!-- Shield Badge -->
+  <circle cx="132" cy="132" r="32" fill="#10B981"/>
+  <path d="M132 112 L148 120 V135 C148 145 141 153 132 156 C123 153 116 145 116 135 V120 Z" fill="#ffffff"/>
+  <path d="M129 130 V127 C129 125.3 130.3 124 132 124 C133.7 124 135 125.3 135 127 V130 H136.5 C137.3 130 138 130.7 138 131.5 V138.5 C138 139.3 137.3 140 136.5 140 H127.5 C126.7 140 126 139.3 126 138.5 V131.5 C126 130.7 126.7 130 127.5 130 H129 Z M130.5 130 H133.5 V127 C133.5 126.2 132.8 125.5 132 125.5 C131.2 125.5 130.5 126.2 130.5 127 V130 Z" fill="#10B981"/>
+</svg>

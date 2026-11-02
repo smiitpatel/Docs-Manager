@@ -1,0 +1,48 @@
+{
+  "name": "Docs Manager - Family Document Management PWA",
+  "short_name": "Docs Manager",
+  "description": "Secure, Google Drive-Powered Family Document Management PWA with Smart Offline Sync & In-Browser PDF Builder",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F172A",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "./icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "business"],
+  "shortcuts": [
+    {
+      "name": "Document Collection",
+      "short_name": "Collection",
+      "description": "Access Document Cart and PDF Builder",
+      "url": "./index.html#collection",
+      "icons": [{ "src": "./icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Offline Documents",
+      "short_name": "Offline",
+      "description": "Access encrypted documents available offline",
+      "url": "./index.html#offline",
+      "icons": [{ "src": "./icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}

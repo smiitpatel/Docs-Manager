@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="grad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <filter id="shadow512" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#grad512)"/>
+  <!-- Document back -->
+  <rect x="136" y="112" width="240" height="300" rx="24" fill="#ffffff" opacity="0.95" filter="url(#shadow512)"/>
+  <!-- Fold corner accent -->
+  <path d="M304 112 L376 184 L304 184 Z" fill="#E0E7FF"/>
+  <!-- Shield lock overlay for Family Document Security -->
+  <circle cx="360" cy="360" r="88" fill="#10B981" filter="url(#shadow512)"/>
+  <path d="M360 304 L404 324 V366 C404 394 384 416 360 424 C336 416 316 394 316 366 V324 Z" fill="#ffffff"/>
+  <path d="M352 352 V344 C352 339.6 355.6 336 360 336 C364.4 336 368 339.6 368 344 V352 H372 C374.2 352 376 353.8 376 356 V374 C376 376.2 374.2 378 372 378 H348 C345.8 378 344 376.2 344 374 V356 C344 353.8 345.8 352 348 352 H352 Z M356 352 H364 V344 C364 341.8 362.2 340 360 340 C357.8 340 356 341.8 356 344 V352 Z" fill="#10B981"/>
+  <!-- Document Lines -->
+  <rect x="176" y="196" width="104" height="12" rx="6" fill="#4F46E5"/>
+  <rect x="176" y="228" width="160" height="10" rx="5" fill="#94A3B8"/>
+  <rect x="176" y="254" width="130" height="10" rx="5" fill="#94A3B8"/>
+  <rect x="176" y="280" width="100" height="10" rx="5" fill="#CBD5E1"/>
+</svg>

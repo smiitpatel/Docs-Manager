@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Docs Manager - Secure Family Document Management PWA</title>
+  <meta name="description" content="A Secure, Google Drive-Powered Family Document Management PWA with Smart Offline Sync & In-Browser PDF Builder." />
+  
+  <!-- PWA & Mobile Capabilities -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#0F172A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Docs Manager" />
+  
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg" />
+
+  <!-- Preconnect & Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- External Libraries -->
+  <!-- 1. Google Identity Services (GIS) for client-side OAuth 2.0 -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- 2. Google API Client (GAPI) -->
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+  <!-- 3. In-Browser PDF Generation & Merging Engine (pdf-lib) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
+
+  <!-- Application Styles -->
+  <link rel="stylesheet" href="./css/themes.css" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <!-- App Shell Root -->
+  <div id="app-root">
+    <!-- Sidebar Navigation -->
+    <aside id="app-sidebar" class="sidebar"></aside>
+
+    <!-- Main Workspace Area -->
+    <div class="main-wrapper">
+      <!-- Top Bar -->
+      <header id="app-header" class="top-header"></header>
+
+      <!-- Dynamic Views (Dashboard, Explorer, Collection, Offline) -->
+      <main id="main-content-view" class="content-view"></main>
+    </div>
+  </div>
+
+  <!-- Modal Dialog Mount Points -->
+  <div id="preview-modal-root"></div>
+  <div id="pdf-builder-modal-root"></div>
+  <div id="setup-modal-root"></div>
+  <div id="settings-modal-root"></div>
+  <div id="toast-container"></div>
+
+  <!-- Main ES Module Entry Point -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
