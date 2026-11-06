@@ -134,12 +134,31 @@ class GoogleDriveServiceClass {
     }
 
     try {
-      const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-      const response = await fetch(url, {
+      let accessToken = AppState.getState().auth.accessToken;
+      let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+      let response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${AppState.getState().auth.accessToken}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
+
+      if (response.status === 401) {
+        // Access token expired, attempt silent background token refresh
+        try {
+          const { AuthenticationService } = await import('./AuthenticationService.js');
+          const refreshed = await AuthenticationService.attemptSilentTokenRefresh();
+          if (refreshed) {
+            accessToken = AppState.getState().auth.accessToken;
+            response = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`
+              }
+            });
+          }
+        } catch (authErr) {
+          console.warn('[GoogleDriveService] Silent token refresh during download failed:', authErr);
+        }
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to download document from Google Drive (${response.status})`);

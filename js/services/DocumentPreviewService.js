@@ -14,6 +14,24 @@ class DocumentPreviewServiceClass {
   }
 
   /**
+   * Resolve appropriate MIME type using doc metadata and filename heuristics
+   */
+  resolveMimeType(doc) {
+    let mime = doc.mimeType;
+    if (!mime || mime === 'application/octet-stream') {
+      const name = (doc.name || '').toLowerCase();
+      if (/\.jpe?g$/i.test(name)) mime = 'image/jpeg';
+      else if (/\.png$/i.test(name)) mime = 'image/png';
+      else if (/\.webp$/i.test(name)) mime = 'image/webp';
+      else if (/\.gif$/i.test(name)) mime = 'image/gif';
+      else if (/\.svg$/i.test(name)) mime = 'image/svg+xml';
+      else if (/\.pdf$/i.test(name)) mime = 'application/pdf';
+      else mime = 'application/octet-stream';
+    }
+    return mime;
+  }
+
+  /**
    * Acquire a previewable Blob URL for a document (either from encrypted offline storage or Google Drive)
    */
   async getPreviewUrl(doc) {
@@ -21,31 +39,50 @@ class DocumentPreviewServiceClass {
     this.revokeActiveUrl();
 
     const fileId = doc.id || doc.fileId;
+    const resolvedMime = this.resolveMimeType(doc);
 
-    // 1. Try offline storage first (fast, works without internet)
-    const offlineDoc = await OfflineStorageService.getDecryptedDocument(fileId);
-    if (offlineDoc && offlineDoc.rawBuffer) {
-      const blob = new Blob([offlineDoc.rawBuffer], { type: doc.mimeType || 'application/pdf' });
+    // 1. Try offline storage first (instant, works without internet)
+    try {
+      const offlineDoc = await OfflineStorageService.getDecryptedDocument(fileId);
+      if (offlineDoc && offlineDoc.rawBuffer) {
+        const blob = new Blob([offlineDoc.rawBuffer], { type: resolvedMime });
+        this.activeBlobUrl = URL.createObjectURL(blob);
+        return {
+          url: this.activeBlobUrl,
+          blob,
+          isFromOffline: true,
+          source: 'Encrypted Offline Vault'
+        };
+      }
+    } catch (e) {
+      console.warn('[DocumentPreviewService] Offline read skipped:', e);
+    }
+
+    // 2. Download original binary from Google Drive
+    try {
+      const rawBuffer = await GoogleDriveService.downloadFileBuffer(fileId);
+      const blob = new Blob([rawBuffer], { type: resolvedMime });
       this.activeBlobUrl = URL.createObjectURL(blob);
+
       return {
         url: this.activeBlobUrl,
         blob,
-        isFromOffline: true,
-        source: 'Encrypted Offline Vault'
+        isFromOffline: false,
+        source: 'Google Drive Stream'
       };
+    } catch (err) {
+      // 3. Fallback for photos: if stream fails and Google thumbnailLink is available, use high-res image CDN
+      if (isImageFile(resolvedMime, doc.name) && doc.thumbnailLink) {
+        const highResUrl = doc.thumbnailLink.replace(/=s\d+.*$/, '=s1600');
+        return {
+          url: highResUrl,
+          blob: null,
+          isFromOffline: false,
+          source: 'Google Drive Image CDN'
+        };
+      }
+      throw err;
     }
-
-    // 2. If not offline, download from Google Drive
-    const rawBuffer = await GoogleDriveService.downloadFileBuffer(fileId);
-    const blob = new Blob([rawBuffer], { type: doc.mimeType || 'application/pdf' });
-    this.activeBlobUrl = URL.createObjectURL(blob);
-
-    return {
-      url: this.activeBlobUrl,
-      blob,
-      isFromOffline: false,
-      source: 'Google Drive Stream'
-    };
   }
 
   /**

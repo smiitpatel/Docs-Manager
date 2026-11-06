@@ -76,8 +76,9 @@ export function renderDocumentPreviewModal() {
         <div style="flex: 1; display: flex; overflow: hidden; background: #05070E;">
           <!-- Main Display Area -->
           <div id="viewer-stage" style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative;">
-            <div style="color: var(--text-muted); font-size: 0.9rem;" id="viewer-loading-msg">
-              Decrypting and preparing document preview...
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.85rem; color: var(--text-muted); font-size: 0.9rem;" id="viewer-loading-msg">
+              <div class="spinner"></div>
+              <div>Decrypting and preparing document preview...</div>
             </div>
           </div>
 
@@ -141,8 +142,10 @@ export function renderDocumentPreviewModal() {
         // Image viewer
         const img = document.createElement('img');
         img.src = url;
-        img.style.maxWidth = '90%';
-        img.style.maxHeight = '90%';
+        img.alt = doc.name;
+        img.setAttribute('referrerpolicy', 'no-referrer');
+        img.style.maxWidth = '92%';
+        img.style.maxHeight = '92%';
         img.style.objectFit = 'contain';
         img.style.borderRadius = 'var(--radius-md)';
         img.style.boxShadow = 'var(--shadow-lg)';
@@ -151,11 +154,24 @@ export function renderDocumentPreviewModal() {
     })
     .catch((err) => {
       stage.innerHTML = `
-        <div style="text-align: center; color: var(--danger); padding: 2rem;">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 0.5rem;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <div>Preview failed: ${err.message}</div>
+        <div style="text-align: center; color: var(--text-muted); padding: 2.5rem 1.5rem; max-width: 500px; margin: 0 auto;">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" style="margin-bottom: 0.75rem;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Could not preview document</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5;">${escapeHtml(err.message)}</div>
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            ${doc.webViewLink ? `
+              <a href="${escapeHtml(doc.webViewLink)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                <span>Open in Google Drive</span>
+              </a>
+            ` : ''}
+            <button class="btn btn-secondary btn-sm" id="btn-preview-retry">Retry Preview</button>
+          </div>
         </div>
       `;
+      stage.querySelector('#btn-preview-retry')?.addEventListener('click', () => {
+        renderDocumentPreviewModal();
+      });
     });
 
   // Close handlers
@@ -193,12 +209,21 @@ export function renderDocumentPreviewModal() {
   });
 
   // Explicit Download button
-  modalRoot.querySelector('#btn-viewer-download')?.addEventListener('click', () => {
+  modalRoot.querySelector('#btn-viewer-download')?.addEventListener('click', async () => {
     if (currentBlob) {
       exportFileToDevice(currentBlob, doc.name);
       showToast(`Exported "${doc.name}" to device Downloads.`, 'success');
     } else {
-      showToast('Document buffer is still loading...', 'info');
+      showToast('Downloading full document for export...', 'info');
+      try {
+        const raw = await import('../services/GoogleDriveService.js').then(m => m.GoogleDriveService.downloadFileBuffer(doc.id || doc.fileId));
+        const mime = DocumentPreviewService.resolveMimeType(doc);
+        const dlBlob = new Blob([raw], { type: mime });
+        exportFileToDevice(dlBlob, doc.name);
+        showToast(`Exported "${doc.name}" to device Downloads.`, 'success');
+      } catch (err) {
+        showToast('Download failed: ' + err.message, 'error');
+      }
     }
   });
 }

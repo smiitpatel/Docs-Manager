@@ -8,8 +8,9 @@
 import { AppState } from '../state/AppState.js';
 import { SmartOfflineSyncService } from '../services/SmartOfflineSyncService.js';
 import { CollectionService } from '../services/CollectionService.js';
-import { formatBytes, formatDate, getCategoryBadge, isPdfFile, exportFileToDevice } from '../utils/helpers.js';
+import { formatBytes, formatDate, getCategoryBadge, isPdfFile, isImageFile, exportFileToDevice, escapeHtml } from '../utils/helpers.js';
 import { OfflineStorageService } from '../services/OfflineStorageService.js';
+import { NavigationService } from '../services/NavigationService.js';
 import { showToast } from './Toast.js';
 
 export function renderOfflineVaultView(container) {
@@ -73,16 +74,46 @@ export function renderOfflineVaultView(container) {
 
 function renderOfflineDocCard(doc, state) {
   const isPdf = isPdfFile(doc.mimeType, doc.name);
+  const isImage = isImageFile(doc.mimeType, doc.name);
   const inCollection = state.collection.items.some(i => i.id === doc.fileId);
   const badgeStyle = getCategoryBadge(doc.category || 'Other');
+  const thumbUrl = doc.dataUrl || doc.thumbnailLink || null;
 
   return `
     <div class="doc-card" data-file-id="${doc.fileId}">
       <div class="doc-preview-thumb" data-action="preview">
-        ${isPdf ? `
+        ${thumbUrl ? `
+          <img 
+            src="${escapeHtml(thumbUrl)}" 
+            alt="${escapeHtml(doc.name)}" 
+            loading="lazy" 
+            referrerpolicy="no-referrer"
+            onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" 
+          />
+          <div class="thumb-fallback-icon" style="display: none; align-items: center; justify-content: center; width: 100%; height: 100%;">
+            ${isPdf ? `
+              <div style="text-align: center;">
+                <svg class="doc-icon-large" style="color: #EF4444;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h6"/></svg>
+                <div style="font-size: 0.7rem; font-weight: 700; color: #EF4444; margin-top: 4px;">OFFLINE PDF</div>
+              </div>
+            ` : isImage ? `
+              <div style="text-align: center;">
+                <svg class="doc-icon-large" style="color: #3B82F6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-top: 4px;">OFFLINE IMAGE</div>
+              </div>
+            ` : `
+              <svg class="doc-icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            `}
+          </div>
+        ` : isPdf ? `
           <div style="text-align: center;">
             <svg class="doc-icon-large" style="color: #EF4444;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h6"/></svg>
             <div style="font-size: 0.7rem; font-weight: 700; color: #EF4444; margin-top: 4px;">OFFLINE PDF</div>
+          </div>
+        ` : isImage ? `
+          <div style="text-align: center;">
+            <svg class="doc-icon-large" style="color: #3B82F6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-top: 4px;">OFFLINE IMAGE</div>
           </div>
         ` : `
           <svg class="doc-icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -147,7 +178,10 @@ function attachOfflineEvents(container, items) {
     if (!doc) return;
 
     card.querySelectorAll('[data-action="preview"]').forEach(el => {
-      el.addEventListener('click', () => AppState.setPreviewDocument(doc));
+      el.addEventListener('click', () => {
+        NavigationService.pushStep('preview');
+        AppState.setPreviewDocument(doc);
+      });
     });
 
     card.querySelector('[data-action="remove-offline"]')?.addEventListener('click', async (e) => {
