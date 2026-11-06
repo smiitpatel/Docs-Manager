@@ -43,7 +43,7 @@ export function renderSettingsModal() {
 
         <div class="modal-body">
           <!-- Root Folder Configuration -->
-          <div class="form-group">
+          <!--<div class="form-group">
             <label class="form-label">Google Drive Root Folder</label>
             <div style="display: flex; gap: 0.5rem;">
               <input 
@@ -59,9 +59,10 @@ export function renderSettingsModal() {
             <div class="form-helper">
               Current Folder: <strong>${drive.rootFolderName || 'None'}</strong>. All operations stay strictly constrained within this boundary.
             </div>
-          </div>
+          </div> -->
 
           <!-- OAuth Client ID -->
+          <!--
           <div class="form-group">
             <label class="form-label">Google OAuth 2.0 Client ID</label>
             <input 
@@ -73,6 +74,7 @@ export function renderSettingsModal() {
             />
             <div class="form-helper">Public client ID for Google Identity Services.</div>
           </div>
+          -->
 
           <!-- Local Storage Breakdown -->
           <div style="padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
