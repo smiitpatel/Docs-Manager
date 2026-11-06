@@ -58,10 +58,10 @@ export function renderHeader() {
 
     <div class="header-actions">
       <!-- Status Pill -->
-      <div class="connection-pill" id="btn-status-pill" title="Google Drive connection status">
+      <!--<div class="connection-pill" id="btn-status-pill" title="Google Drive connection status">
         <span class="status-dot ${statusClass}"></span>
         <span>${statusText}</span>
-      </div>
+      </div>-->
 
       ${canInstallPWA ? `
         <button class="btn btn-secondary btn-sm" id="btn-pwa-install" title="Install Docs Manager as a native desktop/mobile app">

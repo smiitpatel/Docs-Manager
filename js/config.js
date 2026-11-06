@@ -9,7 +9,7 @@
 export const APP_CONFIG = {
   // Google OAuth 2.0 Web Client ID (from Google Cloud Console -> Credentials -> OAuth 2.0 Client IDs)
   // Example: '123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com'
-  GOOGLE_CLIENT_ID: '',
+  GOOGLE_CLIENT_ID: '137207085979-n6gasnki3skr9br375qunq54nsjrtptk.apps.googleusercontent.com',
 
   // The default root folder name on Google Drive (Google Colab style)
   // When you sign in, the app automatically finds this folder in your Drive,
