@@ -272,6 +272,89 @@ class GoogleDriveServiceClass {
   }
 
   /**
+   * Google Colab-Style: Search Google Drive for an existing folder by name
+   */
+  async findFolderByName(folderName = 'Docs Manager') {
+    const safeName = folderName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const query = encodeURIComponent(`mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}' and trashed = false`);
+    const fields = encodeURIComponent('files(id, name, mimeType, parents, owners, shared, modifiedTime)');
+    const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=${fields}&pageSize=10&orderBy=modifiedTime desc`;
+
+    const response = await fetch(url, { headers: this.getHeaders() });
+    if (!response.ok) {
+      throw new Error(`Google Drive search failed (${response.status})`);
+    }
+    const data = await response.json();
+    return data.files || [];
+  }
+
+  /**
+   * Google Colab-Style: Create root folder in Google Drive with starter subfolders
+   */
+  async createRootDocsManagerFolder(folderName = 'Docs Manager', starterFolders = []) {
+    const metadata = {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: ['root']
+    };
+
+    const response = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(metadata)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create Docs Manager root folder on Google Drive (${response.status})`);
+    }
+
+    const rootFolder = await response.json();
+
+    // Create organized category starter folders
+    if (Array.isArray(starterFolders) && starterFolders.length > 0) {
+      for (const subName of starterFolders) {
+        try {
+          await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({
+              name: subName,
+              mimeType: 'application/vnd.google-apps.folder',
+              parents: [rootFolder.id]
+            })
+          });
+        } catch (e) {
+          console.warn(`[GoogleDriveService] Starter folder creation skipped for ${subName}:`, e);
+        }
+      }
+    }
+
+    return rootFolder;
+  }
+
+  /**
+   * Google Colab-Style: Ensure Docs Manager folder exists.
+   * Checks if it exists; if yes returns it, if no creates it automatically.
+   */
+  async ensureDocsManagerFolder(folderName = 'Docs Manager', starterFolders = []) {
+    const { isDemoMode } = AppState.getState().auth;
+    if (isDemoMode) {
+      return { id: this.mockTree.id, name: this.mockTree.name, isNew: false };
+    }
+
+    // 1. Search for existing folder
+    const existingFolders = await this.findFolderByName(folderName);
+    if (existingFolders && existingFolders.length > 0) {
+      const match = existingFolders[0];
+      return { id: match.id, name: match.name, isNew: false };
+    }
+
+    // 2. Folder does not exist: create it in root like Google Colab!
+    const newFolder = await this.createRootDocsManagerFolder(folderName, starterFolders);
+    return { id: newFolder.id, name: newFolder.name || folderName, isNew: true };
+  }
+
+  /**
    * SECURITY ENFORCEMENT: Root Folder Boundary Validator
    * Asserts that targetFolderId is inside or matches the configured root folder
    */

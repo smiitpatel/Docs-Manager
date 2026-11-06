@@ -63,19 +63,23 @@ To connect your real Google Drive account, follow these one-time steps in the [G
    - `http://localhost:5500`
    - `https://<your-github-username>.github.io` (for GitHub Pages)
 6. Click **Create**. Copy your **Client ID** (looks like `123456789-abcdef.apps.googleusercontent.com`).
+7. Paste this Client ID into `js/config.js` inside `APP_CONFIG.GOOGLE_CLIENT_ID`. This makes your app work instantly on any device (your phone, your friend's phone, laptop) without having to re-enter it!
 
 ---
 
-## 📁 Shared Family Folder Setup (Papa & You)
+## 📁 Google Colab-Style Automatic Folder Setup
 
-1. **Papa's Side**: Papa creates a folder in his Google Drive called `Docs Manager`.
-2. Papa right-clicks the folder > **Share** > enters your Google account email > selects **Editor** permission.
-3. Papa copies the folder link (e.g. `https://drive.google.com/drive/folders/1aBcDeFgHi...`).
-4. **Your Side**:
-   - Open Docs Manager.
-   - Click **Connect Drive** in the header.
-   - Enter your **OAuth Client ID** and paste the **Folder Link**.
-   - Docs Manager extracts the folder ID, validates permissions, and establishes the root boundary!
+Just like **Google Colab** automatically creates a `Colab Notebooks` folder in Google Drive:
+
+1. **Automatic Detection & Creation**:
+   - When you click **Connect Drive** and log in with your Google Account, Docs Manager automatically checks if a folder named `Docs Manager` exists in your Google Drive.
+   - **If it exists**: It connects immediately and displays all your family documents!
+   - **If it does NOT exist**: Docs Manager automatically creates a brand new `Docs Manager` folder in your Google Drive with organized starter subfolders (`01_Personal_IDs`, `02_Finance_Banking`, `03_Property_Legal`, `04_Education_Career`, `05_Medical_Insurance`)!
+   - **Zero manual link pasting required!**
+
+2. **Shared Family Folders (Papa & You)**:
+   - If Papa created the `Docs Manager` folder in his Drive and shared it with you (Editor permission), Docs Manager automatically finds it via Google Drive API search.
+   - You can also optionally paste any custom shared folder link in the Setup/Settings modal anytime.
 
 ---
 

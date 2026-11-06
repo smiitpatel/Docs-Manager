@@ -74,18 +74,23 @@ export function renderSetupModal() {
             </div>
           </div>
 
-          <!-- Step 2: Google Drive Root Folder URL -->
+          <!-- Step 2: Google Drive Root Folder (Automatic Colab Mode) -->
           <div class="form-group">
-            <label class="form-label">2. Google Drive Root Folder URL or ID</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label class="form-label" style="margin-bottom: 0;">2. Google Drive Root Folder</label>
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; font-weight: 600;">
+                ⚡ Auto-Detect & Create (Colab Style)
+              </span>
+            </div>
             <input 
               type="text" 
               id="setup-root-folder" 
               class="form-input" 
-              placeholder="e.g. https://drive.google.com/drive/folders/1aBcDeFgHi..." 
-              value="${drive.rootFolderId || ''}"
+              placeholder="Leave blank for automatic detection or paste custom folder URL..." 
+              value="${drive.rootFolderId && drive.rootFolderId !== 'mock_root_family_docs' ? drive.rootFolderId : ''}"
             />
             <div class="form-helper">
-              Paste the shareable link or folder URL of the root folder (e.g. Papa's shared "Docs Manager" folder). The folder ID will be extracted automatically.
+              <strong>Like Google Colab:</strong> If left blank, Docs Manager automatically finds your existing <code>Docs Manager</code> folder or creates a new one in your Google Drive with organized subfolders!
             </div>
           </div>
 

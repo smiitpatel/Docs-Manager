@@ -78,7 +78,12 @@ export function renderHeader() {
       </button>
 
       <!-- Account / Connect Action -->
-      ${auth.isSignedIn ? `
+      ${auth.isDemoMode ? `
+        <button class="btn btn-primary btn-sm" id="btn-connect-google" style="background: linear-gradient(135deg, #2563EB, #10B981); border: none;" title="Connect your real Google Drive">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span>Connect Real Drive</span>
+        </button>
+      ` : auth.isSignedIn ? `
         <button class="btn btn-outline btn-sm" id="btn-open-settings" title="Settings and Storage">
           ${auth.userProfile && auth.userProfile.picture ? `
             <img src="${auth.userProfile.picture}" style="width: 20px; height: 20px; border-radius: 50%;" />
@@ -125,7 +130,17 @@ export function renderHeader() {
 
   const connectBtn = document.getElementById('btn-connect-google');
   if (connectBtn) {
-    connectBtn.addEventListener('click', () => AppState.setSetupOpen(true));
+    connectBtn.addEventListener('click', () => {
+      const { clientId } = AppState.getState().auth;
+      if (clientId) {
+        AuthenticationService.signIn().catch(err => {
+          console.warn('[Header] Direct signIn failed, opening setup modal:', err);
+          AppState.setSetupOpen(true);
+        });
+      } else {
+        AppState.setSetupOpen(true);
+      }
+    });
   }
 
   const statusPill = document.getElementById('btn-status-pill');

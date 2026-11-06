@@ -11,6 +11,8 @@
 
 import { AppState } from '../state/AppState.js';
 import { OfflineStorageService } from './OfflineStorageService.js';
+import { RootFolderService } from './RootFolderService.js';
+import { APP_CONFIG } from '../config.js';
 
 class AuthenticationServiceClass {
   constructor() {
@@ -114,6 +116,13 @@ class AuthenticationServiceClass {
           });
 
           this.scheduleTokenExpiration(expiresIn * 1000);
+
+          // Google Colab-Style: Automatically discover or create 'Docs Manager' folder on Google Drive
+          try {
+            await RootFolderService.autoInitializeDocsManagerFolder();
+          } catch (initErr) {
+            console.error('[Auth] Failed auto-initializing root folder:', initErr);
+          }
         }
       });
 
@@ -128,7 +137,12 @@ class AuthenticationServiceClass {
    * Trigger Google Account Sign-In / Connect
    */
   async signIn() {
-    const { clientId } = AppState.getState().auth;
+    let { clientId } = AppState.getState().auth;
+
+    if (!clientId && APP_CONFIG.GOOGLE_CLIENT_ID) {
+      clientId = APP_CONFIG.GOOGLE_CLIENT_ID;
+      AppState.setAuth({ clientId });
+    }
 
     if (!clientId) {
       AppState.setSetupOpen(true);

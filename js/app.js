@@ -49,6 +49,11 @@ class AppController {
       });
       AppState.setRootFolder(INITIAL_MOCK_TREE.id, INITIAL_MOCK_TREE.name);
       await RootFolderService.refreshCurrentFolder();
+    } else if (auth.isSignedIn && !auth.isDemoMode && (!drive.rootFolderId || drive.rootFolderId === INITIAL_MOCK_TREE.id)) {
+      // Authenticated with Google Drive: Auto-detect or create 'Docs Manager' folder (Google Colab style)
+      RootFolderService.autoInitializeDocsManagerFolder().catch(err => {
+        console.warn('Auto initialize root folder on load error:', err);
+      });
     } else if (drive.rootFolderId) {
       // Refresh current folder
       RootFolderService.refreshCurrentFolder().catch(err => {
@@ -64,7 +69,7 @@ class AppController {
   }
 
   handleRouting() {
-    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    const hash = window.location.hash.replace('#', '') || 'explorer';
     const validViews = ['dashboard', 'explorer', 'collection', 'offline', 'settings'];
     if (validViews.includes(hash)) {
       if (hash === 'settings') {

@@ -2,12 +2,28 @@
  * Docs Manager - Reactive Central Application State
  */
 
+import { APP_CONFIG } from '../config.js';
+
 class StateStore {
   constructor() {
+    // Check if Client ID is provided via one-time URL parameter (e.g. ?cid=... or ?client_id=...)
+    let urlClientId = null;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlClientId = urlParams.get('cid') || urlParams.get('client_id');
+      if (urlClientId) {
+        localStorage.setItem('docs_manager_google_client_id', urlClientId);
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch (e) {
+      console.warn('[AppState] URL params parse error:', e);
+    }
+
     const savedTheme = localStorage.getItem('docs_manager_theme') || 'dark';
     const savedRootFolderId = localStorage.getItem('docs_manager_root_folder_id') || null;
-    const savedRootFolderName = localStorage.getItem('docs_manager_root_folder_name') || 'Family Documents';
-    const savedClientId = localStorage.getItem('docs_manager_google_client_id') || '';
+    const savedRootFolderName = localStorage.getItem('docs_manager_root_folder_name') || APP_CONFIG.ROOT_FOLDER_NAME || 'Docs Manager';
+    const savedClientId = urlClientId || localStorage.getItem('docs_manager_google_client_id') || APP_CONFIG.GOOGLE_CLIENT_ID || '';
     const savedDemoMode = localStorage.getItem('docs_manager_demo_mode') === 'true';
 
     this.state = {
