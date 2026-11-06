@@ -11,6 +11,7 @@
 import { AppState } from '../state/AppState.js';
 import { SmartPDFBuilder } from '../services/SmartPDFBuilder.js';
 import { GoogleDriveService } from '../services/GoogleDriveService.js';
+import { RootFolderService } from '../services/RootFolderService.js';
 import { exportFileToDevice } from '../utils/helpers.js';
 import { showToast } from './Toast.js';
 
@@ -235,6 +236,7 @@ function attachBuilderEvents(modalRoot, items) {
       showToast(`Saving "${filename}" to Google Drive...`, 'info');
       await GoogleDriveService.uploadFile(generatedPdfBlob, filename, targetFolderId);
       showToast(`Saved "${filename}" to Google Drive folder!`, 'success');
+      await RootFolderService.refreshCurrentFolder();
       close();
     } catch (err) {
       showToast(err.message, 'error');

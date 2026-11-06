@@ -24,7 +24,8 @@ class StateStore {
     const savedRootFolderId = localStorage.getItem('docs_manager_root_folder_id') || null;
     const savedRootFolderName = localStorage.getItem('docs_manager_root_folder_name') || APP_CONFIG.ROOT_FOLDER_NAME || 'Docs Manager';
     const savedClientId = urlClientId || localStorage.getItem('docs_manager_google_client_id') || APP_CONFIG.GOOGLE_CLIENT_ID || '';
-    const savedDemoMode = localStorage.getItem('docs_manager_demo_mode') === 'true';
+    const isLoggedIn = localStorage.getItem('docs_manager_is_logged_in') === 'true';
+    const savedDemoMode = !isLoggedIn && (localStorage.getItem('docs_manager_demo_mode') === 'true');
 
     this.state = {
       auth: {
@@ -135,12 +136,12 @@ class StateStore {
     this.notify();
   }
 
-  setDriveData({ folders = [], files = [], allDiscoveredFolders = [], allDiscoveredFiles = [], isLoading = false }) {
-    if (folders) this.state.drive.folders = folders;
-    if (files) this.state.drive.files = files;
-    if (allDiscoveredFolders.length > 0) this.state.drive.allDiscoveredFolders = allDiscoveredFolders;
-    if (allDiscoveredFiles.length > 0) this.state.drive.allDiscoveredFiles = allDiscoveredFiles;
-    this.state.drive.isLoading = isLoading;
+  setDriveData(update) {
+    if (update.folders !== undefined) this.state.drive.folders = update.folders;
+    if (update.files !== undefined) this.state.drive.files = update.files;
+    if (update.allDiscoveredFolders !== undefined) this.state.drive.allDiscoveredFolders = update.allDiscoveredFolders;
+    if (update.allDiscoveredFiles !== undefined) this.state.drive.allDiscoveredFiles = update.allDiscoveredFiles;
+    if (update.isLoading !== undefined) this.state.drive.isLoading = update.isLoading;
     this.notify();
   }
 

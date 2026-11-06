@@ -87,7 +87,7 @@ export function renderSetupModal() {
               id="setup-root-folder" 
               class="form-input" 
               placeholder="Leave blank for automatic detection or paste custom folder URL..." 
-              value="${drive.rootFolderId && drive.rootFolderId !== 'mock_root_family_docs' ? drive.rootFolderId : ''}"
+              value="${drive.rootFolderId && !drive.rootFolderId.startsWith('mock_') ? drive.rootFolderId : ''}"
             />
             <div class="form-helper">
               <strong>Like Google Colab:</strong> If left blank, Docs Manager automatically finds your existing <code>Docs Manager</code> folder or creates a new one in your Google Drive with organized subfolders!

@@ -14,16 +14,17 @@ export function renderDashboardView(container) {
   const state = AppState.getState();
   const { drive, offline, collection, auth, ui } = state;
 
-  // Aggregate files from current folder or discovered files
-  let allFiles = drive.allDiscoveredFiles && drive.allDiscoveredFiles.length ? drive.allDiscoveredFiles : drive.files;
-  
-  // If in demo mode and no flat list, flatten mock tree for dashboard stats
-  if (auth.isDemoMode && (!allFiles || allFiles.length === 0)) {
-    allFiles = flattenMockFiles(drive.folders, drive.files);
-  }
+  // Real dynamic document list across all discovered folders and files
+  const allFiles = (drive.allDiscoveredFiles && drive.allDiscoveredFiles.length > 0)
+    ? drive.allDiscoveredFiles
+    : (drive.files || []);
 
-  const totalDocs = allFiles.length || 10;
-  const totalFolders = (drive.folders && drive.folders.length) ? drive.folders.length + 3 : 5;
+  const allFolders = (drive.allDiscoveredFolders && drive.allDiscoveredFolders.length > 0)
+    ? drive.allDiscoveredFolders
+    : (drive.folders || []);
+
+  const totalDocs = allFiles.length;
+  const totalFolders = allFolders.length;
   const offlineDocsCount = offline.offlineMap.size;
   const storageUsedStr = formatBytes(offline.storageUsage);
 
@@ -36,7 +37,8 @@ export function renderDashboardView(container) {
     const q = ui.searchQuery.toLowerCase();
     filteredFiles = filteredFiles.filter(f => 
       f.name.toLowerCase().includes(q) || 
-      (f.category && f.category.toLowerCase().includes(q))
+      (f.category && f.category.toLowerCase().includes(q)) ||
+      (f.folderName && f.folderName.toLowerCase().includes(q))
     );
   }
 
@@ -132,11 +134,18 @@ export function renderDashboardView(container) {
       <div class="section-title">Document Categories</div>
     </div>
     <div class="category-chips-bar">
-      ${CATEGORIES.map(cat => `
-        <div class="category-chip ${(ui.selectedCategory === cat || (!ui.selectedCategory && cat === 'All')) ? 'active' : ''}" data-category="${cat}">
-          ${cat}
-        </div>
-      `).join('')}
+      ${CATEGORIES.map(cat => {
+        const count = cat === 'All' 
+          ? allFiles.length 
+          : allFiles.filter(f => f.category === cat).length;
+        const isActive = (ui.selectedCategory === cat || (!ui.selectedCategory && cat === 'All'));
+        return `
+          <div class="category-chip ${isActive ? 'active' : ''}" data-category="${cat}">
+            <span>${cat}</span>
+            <span style="opacity: 0.65; font-size: 0.72rem; margin-left: 4px;">(${count})</span>
+          </div>
+        `;
+      }).join('')}
     </div>
 
     <!-- Documents Section -->
@@ -145,10 +154,22 @@ export function renderDashboardView(container) {
     </div>
 
     ${filteredFiles.length === 0 ? `
-      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-lg); border: 1px dashed var(--border-subtle);">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 0.75rem;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">No documents match your filter</div>
-        <div style="font-size: 0.85rem;">Try choosing another category or clearing your search term.</div>
+      <div style="text-align: center; padding: 3.5rem 1.5rem; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-lg); border: 1px dashed var(--border-subtle);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 0.75rem; color: var(--accent-primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.35rem;">
+          ${allFiles.length === 0 ? 'Your Google Drive is Connected!' : 'No documents match your filter'}
+        </div>
+        <div style="font-size: 0.88rem; max-width: 460px; margin: 0 auto 1.25rem; line-height: 1.5;">
+          ${allFiles.length === 0 
+            ? 'Your "Docs Manager" folder is ready on Google Drive. Open Drive Explorer to browse category subfolders and upload your documents!' 
+            : 'Try choosing another category or clearing your search term.'}
+        </div>
+        ${allFiles.length === 0 ? `
+          <button class="btn btn-primary btn-sm" id="btn-empty-goto-explorer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>Open Drive Explorer & Upload</span>
+          </button>
+        ` : ''}
       </div>
     ` : `
       <div class="documents-grid">
@@ -206,6 +227,10 @@ function renderDocCard(doc, state) {
           <span>${formatBytes(doc.size)}</span>
           <span>•</span>
           <span>${formatDate(doc.modifiedTime)}</span>
+          ${doc.folderName && doc.folderName !== 'Root' ? `
+            <span>•</span>
+            <span style="color: var(--accent-primary); font-weight: 500;" title="Location: ${doc.folderName}">📁 ${doc.folderName}</span>
+          ` : ''}
         </div>
 
         <div class="doc-category-tag" style="background: ${badgeStyle.bg}; color: ${badgeStyle.color};">
@@ -260,6 +285,7 @@ function attachDashboardEvents(container) {
 
   // Quick navigation buttons
   container.querySelector('#btn-quick-explorer')?.addEventListener('click', () => AppState.setActiveView('explorer'));
+  container.querySelector('#btn-empty-goto-explorer')?.addEventListener('click', () => AppState.setActiveView('explorer'));
   container.querySelector('#btn-quick-collection')?.addEventListener('click', () => AppState.setActiveView('collection'));
   container.querySelector('#btn-quick-offline')?.addEventListener('click', () => AppState.setActiveView('offline'));
 
@@ -316,17 +342,6 @@ function attachDashboardEvents(container) {
 
 function findDocById(id) {
   const state = AppState.getState();
-  const all = [...(state.drive.files || []), ...(state.drive.allDiscoveredFiles || [])];
-  const direct = all.find(f => (f.id === id || f.fileId === id));
-  if (direct) return direct;
-
-  // Check mock tree
-  return import('../utils/mockData.js').then(m => {
-    // will be available synchronously in demo
-  }), null;
-}
-
-function flattenMockFiles(folders, directFiles) {
-  const result = [...(directFiles || [])];
-  return result;
+  const all = [...(state.drive.allDiscoveredFiles || []), ...(state.drive.files || [])];
+  return all.find(f => (f.id === id || f.fileId === id)) || null;
 }

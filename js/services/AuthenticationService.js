@@ -22,22 +22,24 @@ class AuthenticationServiceClass {
   }
 
   initSessionFromStorage() {
-    const cachedToken = sessionStorage.getItem('docs_manager_access_token');
-    const expiresAt = sessionStorage.getItem('docs_manager_token_expires_at');
-    const profileJson = sessionStorage.getItem('docs_manager_user_profile');
+    const isLoggedIn = localStorage.getItem('docs_manager_is_logged_in') === 'true';
+    const cachedToken = localStorage.getItem('docs_manager_access_token');
+    const expiresAt = localStorage.getItem('docs_manager_token_expires_at');
+    const profileJson = localStorage.getItem('docs_manager_user_profile');
 
-    if (cachedToken && expiresAt) {
+    if (isLoggedIn) {
       const now = Date.now();
-      const expTime = parseInt(expiresAt, 10);
+      const expTime = parseInt(expiresAt, 10) || 0;
+      let profile = null;
+      try {
+        profile = profileJson ? JSON.parse(profileJson) : null;
+      } catch { /* ignore */ }
 
-      if (now < expTime) {
-        let profile = null;
-        try {
-          profile = profileJson ? JSON.parse(profileJson) : null;
-        } catch { /* ignore */ }
-
+      if (cachedToken && now < expTime) {
+        // Token is valid! Restore persistent session immediately
         AppState.setAuth({
           isSignedIn: true,
+          isDemoMode: false,
           accessToken: cachedToken,
           tokenExpiresAt: expTime,
           isTokenExpired: false,
@@ -46,16 +48,49 @@ class AuthenticationServiceClass {
 
         this.scheduleTokenExpiration(expTime - now);
       } else {
-        // Token has expired
+        // Token expired while window was closed. Maintain logged-in state & auto-refresh silently!
         AppState.setAuth({
           isSignedIn: true,
-          accessToken: null,
+          isDemoMode: false,
+          accessToken: cachedToken,
           tokenExpiresAt: expTime,
           isTokenExpired: true,
-          userProfile: profileJson ? JSON.parse(profileJson) : null
+          userProfile: profile
         });
+
+        this.attemptSilentTokenRefresh();
       }
     }
+  }
+
+  /**
+   * Automatically attempts silent background authentication without user prompts
+   */
+  async attemptSilentTokenRefresh() {
+    const { clientId } = AppState.getState().auth;
+    const targetClientId = clientId || APP_CONFIG.GOOGLE_CLIENT_ID;
+    if (!targetClientId) return;
+
+    const trySilent = async (retries = 0) => {
+      if (window.google?.accounts?.oauth2) {
+        try {
+          if (!this.tokenClient) {
+            await this.initTokenClient(targetClientId);
+          }
+          if (this.tokenClient) {
+            console.log('[Auth] Attempting silent background re-authentication...');
+            // In GIS, prompt: '' requests access token silently without consent dialog
+            this.tokenClient.requestAccessToken({ prompt: '' });
+          }
+        } catch (e) {
+          console.warn('[Auth] Silent token re-auth failed:', e);
+        }
+      } else if (retries < 20) {
+        setTimeout(() => trySilent(retries + 1), 250);
+      }
+    };
+
+    trySilent();
   }
 
   /**
@@ -84,8 +119,10 @@ class AuthenticationServiceClass {
           const expiresIn = parseInt(tokenResponse.expires_in, 10) || 3599;
           const expiresAt = Date.now() + (expiresIn * 1000);
 
-          sessionStorage.setItem('docs_manager_access_token', accessToken);
-          sessionStorage.setItem('docs_manager_token_expires_at', String(expiresAt));
+          localStorage.setItem('docs_manager_access_token', accessToken);
+          localStorage.setItem('docs_manager_token_expires_at', String(expiresAt));
+          localStorage.setItem('docs_manager_is_logged_in', 'true');
+          localStorage.setItem('docs_manager_demo_mode', 'false');
 
           // Fetch basic profile info using token
           let userProfile = { name: 'Family Member', email: 'account@google.com', picture: '' };
@@ -100,7 +137,7 @@ class AuthenticationServiceClass {
                 email: uData.email || '',
                 picture: uData.picture || ''
               };
-              sessionStorage.setItem('docs_manager_user_profile', JSON.stringify(userProfile));
+              localStorage.setItem('docs_manager_user_profile', JSON.stringify(userProfile));
             }
           } catch (e) {
             console.warn('[Auth] User info fetch skipped:', e);
@@ -113,6 +150,22 @@ class AuthenticationServiceClass {
             tokenExpiresAt: expiresAt,
             isTokenExpired: false,
             userProfile
+          });
+
+          // If previous session had a mock root folder, purge it
+          const currentRootId = AppState.getState().drive.rootFolderId;
+          if (currentRootId && currentRootId.startsWith('mock_')) {
+            localStorage.removeItem('docs_manager_root_folder_id');
+            localStorage.removeItem('docs_manager_root_folder_name');
+            AppState.setRootFolder(null, 'Family Documents');
+          }
+
+          // Clear any in-memory demo data before loading real Drive records
+          AppState.setDriveData({
+            folders: [],
+            files: [],
+            allDiscoveredFolders: [],
+            allDiscoveredFiles: []
           });
 
           this.scheduleTokenExpiration(expiresIn * 1000);
@@ -163,23 +216,34 @@ class AuthenticationServiceClass {
   /**
    * Schedule automatic token expiration handler
    * CRITICAL REQUIREMENT (Section 13):
-   * Token expiration never deletes or invalidates offline documents!
+   * 1. Automatically requests a fresh token silently in background before expiration!
+   * 2. Token expiration never deletes or invalidates offline documents!
    */
   scheduleTokenExpiration(timeoutMs) {
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
     }
 
-    this.tokenExpirationTimer = setTimeout(() => {
-      console.log('[Auth] Google Drive session access token has expired.');
-      sessionStorage.removeItem('docs_manager_access_token');
+    // Attempt silent token refresh 2 minutes before token expires
+    const refreshLeadTime = 2 * 60 * 1000;
+    const triggerMs = Math.max(1000, timeoutMs - refreshLeadTime);
 
+    this.tokenExpirationTimer = setTimeout(() => {
+      console.log('[Auth] Token approaching expiration. Attempting silent background refresh...');
+      if (this.tokenClient) {
+        try {
+          this.tokenClient.requestAccessToken({ prompt: '' });
+          return;
+        } catch (e) {
+          console.warn('[Auth] Background refresh error:', e);
+        }
+      }
+
+      // Fallback: mark token expired so user can click to reconnect
       AppState.setAuth({
-        accessToken: null,
         isTokenExpired: true
       });
-      // The user receives a gentle reconnect banner, but offline documents remain 100% accessible!
-    }, Math.max(1000, timeoutMs));
+    }, triggerMs);
   }
 
   /**
@@ -210,9 +274,12 @@ class AuthenticationServiceClass {
       clearTimeout(this.tokenExpirationTimer);
     }
 
-    sessionStorage.removeItem('docs_manager_access_token');
-    sessionStorage.removeItem('docs_manager_token_expires_at');
-    sessionStorage.removeItem('docs_manager_user_profile');
+    localStorage.removeItem('docs_manager_access_token');
+    localStorage.removeItem('docs_manager_token_expires_at');
+    localStorage.removeItem('docs_manager_user_profile');
+    localStorage.removeItem('docs_manager_is_logged_in');
+    localStorage.removeItem('docs_manager_demo_mode');
+    sessionStorage.clear();
 
     if (!retainOfflineCopies) {
       await OfflineStorageService.clearAllOfflineData();

@@ -38,10 +38,12 @@ class AppController {
     // 3. Initialize offline service & IndexedDB
     await SmartOfflineSyncService.init();
 
-    // 4. If demo mode or first visit without cloud setup, seed initial mock files for instant Live Server exploration
+    // 4. Handle session restoration, real Drive sync, and initial demo mode
     const { auth, drive } = AppState.getState();
-    if (!auth.isSignedIn && !drive.rootFolderId) {
-      // Default to demo mode so Live Server shows complete interactive UI immediately!
+    const isLoggedIn = localStorage.getItem('docs_manager_is_logged_in') === 'true';
+
+    if (!auth.isSignedIn && !drive.rootFolderId && !isLoggedIn) {
+      // First visit without cloud setup or previous login: Seed initial mock files for instant exploration
       AppState.setAuth({
         isDemoMode: true,
         isSignedIn: true,
@@ -49,11 +51,17 @@ class AppController {
       });
       AppState.setRootFolder(INITIAL_MOCK_TREE.id, INITIAL_MOCK_TREE.name);
       await RootFolderService.refreshCurrentFolder();
-    } else if (auth.isSignedIn && !auth.isDemoMode && (!drive.rootFolderId || drive.rootFolderId === INITIAL_MOCK_TREE.id)) {
-      // Authenticated with Google Drive: Auto-detect or create 'Docs Manager' folder (Google Colab style)
-      RootFolderService.autoInitializeDocsManagerFolder().catch(err => {
-        console.warn('Auto initialize root folder on load error:', err);
-      });
+    } else if (isLoggedIn || (auth.isSignedIn && !auth.isDemoMode)) {
+      // Real Google Drive user session:
+      if (!drive.rootFolderId || drive.rootFolderId.startsWith('mock_')) {
+        RootFolderService.autoInitializeDocsManagerFolder().catch(err => {
+          console.warn('[App] Auto initialize root folder on load error:', err);
+        });
+      } else {
+        RootFolderService.refreshCurrentFolder().catch(err => {
+          console.warn('[App] Initial folder refresh caught (offline fallback):', err);
+        });
+      }
     } else if (drive.rootFolderId) {
       // Refresh current folder
       RootFolderService.refreshCurrentFolder().catch(err => {

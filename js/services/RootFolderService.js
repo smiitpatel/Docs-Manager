@@ -28,12 +28,13 @@ class RootFolderServiceClass {
     }
 
     // 1. If we already had a configured rootFolderId, verify it's accessible
-    if (rootFolderId && rootFolderId !== 'mock_root_family_docs') {
+    if (rootFolderId && !rootFolderId.startsWith('mock_')) {
       try {
         const validation = await GoogleDriveService.validateFolder(rootFolderId);
         if (validation && validation.valid) {
           AppState.setRootFolder(rootFolderId, validation.name);
           await this.refreshCurrentFolder();
+          await this.syncAllDiscoveredDocuments(rootFolderId);
           showToast(`Connected to Google Drive folder: ${validation.name}`, 'success');
           return;
         }
@@ -59,6 +60,7 @@ class RootFolderServiceClass {
       }
 
       await this.refreshCurrentFolder();
+      await this.syncAllDiscoveredDocuments(result.id);
     } catch (err) {
       console.error('[RootFolderService] Auto-initialize folder failed:', err);
       showToast(`Drive connection error: ${err.message}`, 'error', 5000);
@@ -116,6 +118,10 @@ class RootFolderServiceClass {
         files,
         isLoading: false
       });
+
+      // Synchronize full folder hierarchy & all files for Dashboard metrics & category filtering
+      const effectiveRootId = rootFolderId || targetId;
+      this.syncAllDiscoveredDocuments(effectiveRootId);
     } catch (err) {
       console.warn('[RootFolderService] Online list failed, attempting offline cache:', err);
 
@@ -152,6 +158,23 @@ class RootFolderServiceClass {
       const newPath = currentFolderPath.slice(0, targetIndex + 1);
       AppState.setCurrentFolder(target.id, target.name, newPath);
       await this.refreshCurrentFolder();
+    }
+  }
+
+  /**
+   * Crawl and index all documents across root and all subfolders
+   * to ensure Dashboard metrics, category filters, and file lists are 100% dynamic!
+   */
+  async syncAllDiscoveredDocuments(rootFolderId) {
+    if (!rootFolderId) return;
+    try {
+      const { folders, files } = await GoogleDriveService.crawlFolderTree(rootFolderId);
+      AppState.setDriveData({
+        allDiscoveredFolders: folders,
+        allDiscoveredFiles: files
+      });
+    } catch (err) {
+      console.warn('[RootFolderService] Document tree sync error:', err);
     }
   }
 }

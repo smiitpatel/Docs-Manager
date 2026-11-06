@@ -355,6 +355,97 @@ class GoogleDriveServiceClass {
   }
 
   /**
+   * Recursively crawls all subfolders and files inside the root folder
+   * to provide real dynamic metrics and complete document listings on Dashboard.
+   */
+  async crawlFolderTree(rootFolderId) {
+    const { isDemoMode } = AppState.getState().auth;
+    if (isDemoMode || (rootFolderId && rootFolderId.startsWith('mock_'))) {
+      return this.extractAllFromMockTree(this.mockTree);
+    }
+
+    const discoveredFolders = [];
+    const discoveredFiles = [];
+    const visitedFolderIds = new Set([rootFolderId]);
+
+    let currentBatch = [{ id: rootFolderId, path: '' }];
+    let depth = 0;
+
+    while (currentBatch.length > 0 && depth < 5) {
+      depth++;
+      const nextBatch = [];
+
+      const batchResults = await Promise.all(
+        currentBatch.map(async (item) => {
+          try {
+            const contents = await this.listFolderContents(item.id);
+            return { item, contents };
+          } catch (e) {
+            console.warn(`[GoogleDriveService] Error reading contents for folder ${item.id}:`, e);
+            return { item, contents: { folders: [], files: [] } };
+          }
+        })
+      );
+
+      for (const { item, contents } of batchResults) {
+        for (const file of contents.files) {
+          discoveredFiles.push({
+            ...file,
+            folderName: item.path || 'Root',
+            path: item.path ? `${item.path} / ${file.name}` : file.name
+          });
+        }
+
+        for (const folder of contents.folders) {
+          if (!visitedFolderIds.has(folder.id)) {
+            visitedFolderIds.add(folder.id);
+            const folderPath = item.path ? `${item.path} / ${folder.name}` : folder.name;
+            discoveredFolders.push({
+              ...folder,
+              path: folderPath
+            });
+            nextBatch.push({ id: folder.id, path: folderPath });
+          }
+        }
+      }
+
+      currentBatch = nextBatch;
+    }
+
+    return { folders: discoveredFolders, files: discoveredFiles };
+  }
+
+  /**
+   * Helper to flatten the mock demo tree for dynamic exploration
+   */
+  extractAllFromMockTree(node, currentPath = '') {
+    const discoveredFiles = [];
+    const discoveredFolders = [];
+
+    const traverse = (currNode, path) => {
+      if (currNode.folders && Array.isArray(currNode.folders)) {
+        for (const sub of currNode.folders) {
+          const subPath = path ? `${path} / ${sub.name}` : sub.name;
+          discoveredFolders.push({ ...sub, path: subPath });
+          traverse(sub, subPath);
+        }
+      }
+      if (currNode.files && Array.isArray(currNode.files)) {
+        for (const f of currNode.files) {
+          discoveredFiles.push({
+            ...f,
+            path: path ? `${path} / ${f.name}` : f.name,
+            folderName: path || 'Root'
+          });
+        }
+      }
+    };
+
+    traverse(node, currentPath);
+    return { folders: discoveredFolders, files: discoveredFiles };
+  }
+
+  /**
    * SECURITY ENFORCEMENT: Root Folder Boundary Validator
    * Asserts that targetFolderId is inside or matches the configured root folder
    */
