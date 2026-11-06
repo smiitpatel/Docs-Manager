@@ -8,7 +8,7 @@
  * - Private offline documents are strictly managed by IndexedDB with WebCrypto AES-GCM encryption.
  */
 
-const CACHE_NAME = 'docs-manager-v1.0.0';
+const CACHE_NAME = 'docs-manager-v1.1.0';
 
 // Assets making up the PWA application shell
 const APP_SHELL = [
@@ -20,11 +20,14 @@ const APP_SHELL = [
   './icons/icon-512.svg',
   './css/styles.css',
   './css/themes.css',
+  './js/config.js',
+  './js/libs/pdf-lib.min.js',
   './js/app.js',
   './js/state/AppState.js',
   './js/services/AuthenticationService.js',
   './js/services/GoogleDriveService.js',
   './js/services/RootFolderService.js',
+  './js/services/NavigationService.js',
   './js/services/OfflineStorageService.js',
   './js/services/SmartOfflineSyncService.js',
   './js/services/DocumentPreviewService.js',
@@ -46,9 +49,9 @@ const APP_SHELL = [
   './js/utils/mockData.js'
 ];
 
-// External CDN dependencies (pdf-lib, fonts) that form part of the static app shell
+// External CDN dependencies (pdf-lib fallback, fonts) that form part of the static app shell
 const CDN_STATIC_ASSETS = [
-  'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js',
+  'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
 ];
 

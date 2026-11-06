@@ -19,6 +19,20 @@ class SmartPDFBuilderClass {
    */
   async ensurePDFLib() {
     if (window.PDFLib) return window.PDFLib;
+
+    // Dynamically inject script if not found on page
+    if (!document.getElementById('pdf-lib-engine-script')) {
+      const script = document.createElement('script');
+      script.id = 'pdf-lib-engine-script';
+      script.src = './js/libs/pdf-lib.min.js';
+      script.onerror = () => {
+        console.warn('[SmartPDFBuilder] Local PDFLib failed, loading from CDN fallback...');
+        const cdnScript = document.createElement('script');
+        cdnScript.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+        document.head.appendChild(cdnScript);
+      };
+      document.head.appendChild(script);
+    }
     
     return new Promise((resolve, reject) => {
       let attempts = 0;
@@ -27,11 +41,11 @@ class SmartPDFBuilderClass {
         if (window.PDFLib) {
           clearInterval(interval);
           resolve(window.PDFLib);
-        } else if (attempts > 30) {
+        } else if (attempts > 50) {
           clearInterval(interval);
           reject(new Error('PDF-Lib engine could not be loaded. Check your internet connection or cached assets.'));
         }
-      }, 150);
+      }, 100);
     });
   }
 
