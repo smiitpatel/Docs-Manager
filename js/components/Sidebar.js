@@ -4,6 +4,7 @@
 
 import { AppState } from '../state/AppState.js';
 import { formatBytes } from '../utils/helpers.js';
+import { NavigationService } from '../services/NavigationService.js';
 
 export function renderSidebar() {
   const state = AppState.getState();
@@ -89,6 +90,9 @@ export function renderSidebar() {
     item.addEventListener('click', () => {
       const targetView = item.getAttribute('data-view');
       if (targetView) {
+        if (targetView !== AppState.getState().ui.activeView && targetView !== 'dashboard') {
+          NavigationService.pushStep('view', { view: targetView });
+        }
         AppState.setActiveView(targetView);
         AppState.setSidebarOpen(false);
       }
@@ -97,6 +101,9 @@ export function renderSidebar() {
 
   const closeBtn = document.getElementById('btn-close-sidebar');
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => AppState.setSidebarOpen(false));
+    closeBtn.addEventListener('click', () => {
+      AppState.setSidebarOpen(false);
+      NavigationService.backIfStep('sidebar');
+    });
   }
 }

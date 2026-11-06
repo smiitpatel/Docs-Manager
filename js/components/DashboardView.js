@@ -6,6 +6,7 @@ import { AppState } from '../state/AppState.js';
 import { formatBytes, formatDate, getCategoryBadge, isPdfFile } from '../utils/helpers.js';
 import { CollectionService } from '../services/CollectionService.js';
 import { SmartOfflineSyncService } from '../services/SmartOfflineSyncService.js';
+import { NavigationService } from '../services/NavigationService.js';
 import { showToast } from './Toast.js';
 
 const CATEGORIES = ['All', 'Personal', 'Banking', 'Property', 'Education', 'Insurance', 'Medical', 'Government', 'Other'];
@@ -284,10 +285,22 @@ function attachDashboardEvents(container) {
   }
 
   // Quick navigation buttons
-  container.querySelector('#btn-quick-explorer')?.addEventListener('click', () => AppState.setActiveView('explorer'));
-  container.querySelector('#btn-empty-goto-explorer')?.addEventListener('click', () => AppState.setActiveView('explorer'));
-  container.querySelector('#btn-quick-collection')?.addEventListener('click', () => AppState.setActiveView('collection'));
-  container.querySelector('#btn-quick-offline')?.addEventListener('click', () => AppState.setActiveView('offline'));
+  container.querySelector('#btn-quick-explorer')?.addEventListener('click', () => {
+    NavigationService.pushStep('view', { view: 'explorer' });
+    AppState.setActiveView('explorer');
+  });
+  container.querySelector('#btn-empty-goto-explorer')?.addEventListener('click', () => {
+    NavigationService.pushStep('view', { view: 'explorer' });
+    AppState.setActiveView('explorer');
+  });
+  container.querySelector('#btn-quick-collection')?.addEventListener('click', () => {
+    NavigationService.pushStep('view', { view: 'collection' });
+    AppState.setActiveView('collection');
+  });
+  container.querySelector('#btn-quick-offline')?.addEventListener('click', () => {
+    NavigationService.pushStep('view', { view: 'offline' });
+    AppState.setActiveView('offline');
+  });
 
   // Category chips
   container.querySelectorAll('.category-chip').forEach(chip => {
@@ -304,7 +317,10 @@ function attachDashboardEvents(container) {
     if (!doc) return;
 
     card.querySelectorAll('[data-action="preview"]').forEach(el => {
-      el.addEventListener('click', () => AppState.setPreviewDocument(doc));
+      el.addEventListener('click', () => {
+        NavigationService.pushStep('preview');
+        AppState.setPreviewDocument(doc);
+      });
     });
 
     card.querySelector('[data-action="keep-offline"]')?.addEventListener('click', async (e) => {

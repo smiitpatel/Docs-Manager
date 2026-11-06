@@ -5,6 +5,7 @@
 import { AppState } from '../state/AppState.js';
 import { PWAService } from '../services/PWAService.js';
 import { AuthenticationService } from '../services/AuthenticationService.js';
+import { NavigationService } from '../services/NavigationService.js';
 
 let canInstallPWA = false;
 
@@ -112,7 +113,9 @@ export function renderHeader() {
   const toggleSidebarBtn = document.getElementById('btn-toggle-sidebar');
   if (toggleSidebarBtn) {
     toggleSidebarBtn.addEventListener('click', () => {
-      AppState.setSidebarOpen(!AppState.getState().ui.isSidebarOpen);
+      const willOpen = !AppState.getState().ui.isSidebarOpen;
+      if (willOpen) NavigationService.pushStep('sidebar');
+      AppState.setSidebarOpen(willOpen);
     });
   }
 
@@ -156,6 +159,9 @@ export function renderHeader() {
 
   const settingsBtn = document.getElementById('btn-open-settings');
   if (settingsBtn) {
-    settingsBtn.addEventListener('click', () => AppState.setSettingsOpen(true));
+    settingsBtn.addEventListener('click', () => {
+      NavigationService.pushStep('settings');
+      AppState.setSettingsOpen(true);
+    });
   }
 }

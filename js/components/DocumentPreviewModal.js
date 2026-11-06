@@ -12,6 +12,7 @@
 import { AppState } from '../state/AppState.js';
 import { DocumentPreviewService } from '../services/DocumentPreviewService.js';
 import { SmartOfflineSyncService } from '../services/SmartOfflineSyncService.js';
+import { NavigationService } from '../services/NavigationService.js';
 import { formatBytes, formatDate, isPdfFile, exportFileToDevice } from '../utils/helpers.js';
 import { showToast } from './Toast.js';
 
@@ -161,6 +162,7 @@ export function renderDocumentPreviewModal() {
   const close = () => {
     DocumentPreviewService.revokeActiveUrl();
     AppState.setPreviewDocument(null);
+    NavigationService.backIfStep('preview');
   };
 
   modalRoot.querySelector('#btn-close-viewer')?.addEventListener('click', close);

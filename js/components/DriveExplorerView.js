@@ -7,6 +7,7 @@ import { RootFolderService } from '../services/RootFolderService.js';
 import { GoogleDriveService } from './../services/GoogleDriveService.js';
 import { SmartOfflineSyncService } from '../services/SmartOfflineSyncService.js';
 import { CollectionService } from '../services/CollectionService.js';
+import { NavigationService } from '../services/NavigationService.js';
 import { formatBytes, formatDate, getCategoryBadge, isPdfFile, exportFileToDevice } from '../utils/helpers.js';
 import { showToast } from './Toast.js';
 
@@ -198,6 +199,7 @@ function attachExplorerEvents(container, state) {
     card.addEventListener('click', () => {
       const folderId = card.getAttribute('data-folder-id');
       const folderName = card.getAttribute('data-folder-name');
+      NavigationService.pushStep('folder', { folderId, folderName });
       RootFolderService.navigateToFolder(folderId, folderName);
     });
   });
@@ -248,7 +250,10 @@ function attachExplorerEvents(container, state) {
     if (!doc) return;
 
     card.querySelectorAll('[data-action="preview"]').forEach(el => {
-      el.addEventListener('click', () => AppState.setPreviewDocument(doc));
+      el.addEventListener('click', () => {
+        NavigationService.pushStep('preview');
+        AppState.setPreviewDocument(doc);
+      });
     });
 
     card.querySelector('[data-action="keep-offline"]')?.addEventListener('click', async (e) => {

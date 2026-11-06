@@ -16,6 +16,7 @@ import { renderSetupModal } from './components/SetupModal.js';
 import { renderSettingsModal } from './components/SettingsModal.js';
 import { RootFolderService } from './services/RootFolderService.js';
 import { SmartOfflineSyncService } from './services/SmartOfflineSyncService.js';
+import { NavigationService } from './services/NavigationService.js';
 import { INITIAL_MOCK_TREE } from './utils/mockData.js';
 
 class AppController {
@@ -31,11 +32,14 @@ class AppController {
     // 1. Initialize theme from state
     document.documentElement.setAttribute('data-theme', AppState.getState().ui.theme);
 
-    // 2. Handle URL Hash Navigation
+    // 2. Initialize Smart Mobile Navigation & History (Swipe / Back button)
+    NavigationService.init();
+
+    // 3. Handle URL Hash Navigation
     this.handleRouting();
     window.addEventListener('hashchange', () => this.handleRouting());
 
-    // 3. Initialize offline service & IndexedDB
+    // 4. Initialize offline service & IndexedDB
     await SmartOfflineSyncService.init();
 
     // 4. Handle session restoration, real Drive sync, and initial demo mode
